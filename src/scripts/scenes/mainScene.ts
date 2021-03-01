@@ -36,7 +36,7 @@ export default class MainScene extends Phaser.Scene {
   create() {
     // this.add.tilemap('roadsMap');
     this.map = this.make.tilemap({ key: 'roadsMap' });
-    this.scale.setGameSize(this.map.widthInPixels, this.map.heightInPixels);
+    // this.scale.setGameSize(this.map.widthInPixels, this.map.heightInPixels);
     const zeroPoint = new Phaser.Math.Vector2(0, 0);
     // const test = twoDToIso(zeroPoint);
     // this.matter.world.setBounds(-1800, 280, this.map.widthInPixels, this.map.heightInPixels); //aint gonna work
@@ -49,15 +49,58 @@ export default class MainScene extends Phaser.Scene {
     const treesTileset = this.map.addTilesetImage('trees', 'trees');
     const mountaintileSet = this.map.addTilesetImage('mountain', 'mountain');
     const bottom = this.map.createLayer('bottom', naturePaths);
-
-    bottom.setCollisionByProperty({ collides: true });
+    // bottom.setCollisionByProperty({ collides: true });
     const roads = this.map.createLayer('middle', [roadsTileset, naturePaths]);
     const trees = this.map.createLayer('trees', treesTileset);
     const mountain = this.map.createLayer('mountain_bottom', mountaintileSet);
     roads.setCollisionByProperty({ collides: true }); // just when we add the car.
-    this.matter.world.convertTilemapLayer(bottom);
+    // this.matter.world.convertTilemapLayer(bottom);
     this.matter.world.convertTilemapLayer(roads);
+    const graphics = this.add.graphics();
+    bottom.forEachTile((tile) => {
+      const tileWorldPos = bottom.tileToWorldXY(tile.x, tile.y); //this is the tile as 1,0
+      const collisionGroup: any = naturePaths.getTileCollisionGroup(tile.index);
+      if (!collisionGroup || collisionGroup.objects.length === 0) {
+        return;
+      }
+      if (collisionGroup.properties && collisionGroup.properties.isInteractive) {
+        graphics.lineStyle(5, 0x00ff00, 1);
+      } else {
+        graphics.lineStyle(5, 0x00ffff, 1);
+      }
+      const objects = collisionGroup.objects;
 
+      for (var i = 0; i < objects.length; i++) {
+        var object = objects[i];
+        var objectX = tileWorldPos.x + object.x;
+        var objectY = tileWorldPos.y + object.y;
+
+        // When objects are parsed by Phaser, they will be guaranteed to have one of the
+        // following properties if they are a rectangle/ellipse/polygon/polyline.
+        if (object.rectangle) {
+          graphics.strokeRect(objectX, objectY, object.width, object.height);
+        } else if (object.ellipse) {
+          // Ellipses in Tiled have a top-left origin, while ellipses in Phaser have a center
+          // origin
+          graphics.strokeEllipse(objectX + object.width / 2, objectY + object.height / 2, object.width, object.height);
+        } else if (object.polygon || object.polyline) {
+          var originalPoints = object.polygon ? object.polygon : object.polyline;
+          var points: any[] = [];
+          for (var j = 0; j < originalPoints.length; j++) {
+            var point: any = originalPoints[j];
+            points.push({
+              x: objectX + point.x,
+              y: objectY + point.y
+            });
+          }
+          this.matter.add.fromVertices(tileWorldPos.x + 250, tileWorldPos.y + 310, points, {
+            isStatic: true
+            // isSensor: true
+          });
+          // graphics.strokePoints(points);
+        }
+      }
+    });
     // this.map.setCollisionBetween(0, 1300);
 
     const objectsLayer = this.map.getObjectLayer('objects');
@@ -73,7 +116,7 @@ export default class MainScene extends Phaser.Scene {
           break;
         }
         case 'target': {
-          const { x: xT, y: yT } = thatMap.tileToWorldXY(12, 0);
+          const { x: xT, y: yT } = thatMap.tileToWorldXY(18, 0);
           this.target = this.matter.add.gameObject(this.add.rectangle(xT + 250, yT + 310, width, height, 0x0000ff), {
             isStatic: true,
             isSensor: true

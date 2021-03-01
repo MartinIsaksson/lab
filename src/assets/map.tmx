@@ -11,6 +11,86 @@
    <properties>
     <property name="collides" type="bool" value="true"/>
    </properties>
+   <objectgroup draworder="index" id="3">
+    <object id="3" x="255.5" y="282">
+     <polygon points="0,0 63,32.5 1,65.5 -63,33.5"/>
+    </object>
+   </objectgroup>
+  </tile>
+  <tile id="1">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="2">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="3">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="4">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="5">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="6">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="7">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="8">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="9">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="10">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="11">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="12">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="13">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="14">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
+  </tile>
+  <tile id="15">
+   <properties>
+    <property name="collides" type="bool" value="false"/>
+   </properties>
   </tile>
  </tileset>
  <tileset firstgid="17" name="roads" tilewidth="512" tileheight="512" tilecount="12" columns="4">
@@ -250,28 +330,7 @@
   <object id="5" name="nuclear-fuel-zone" x="-43.3333" y="0.666667" width="357.333" height="280">
    <ellipse/>
   </object>
-  <object id="6" x="108" y="140">
-   <ellipse/>
-  </object>
-  <object id="7" x="40.6667" y="55.3333">
-   <ellipse/>
-  </object>
-  <object id="8" x="121.333" y="129.333">
-   <ellipse/>
-  </object>
-  <object id="9" x="174.667" y="174.667">
-   <ellipse/>
-  </object>
-  <object id="10" x="57.3333" y="28">
-   <ellipse/>
-  </object>
-  <object id="11" x="152.667" y="154">
-   <ellipse/>
-  </object>
   <object id="14" name="car_spawn" x="782.197" y="1992.5" width="39.2879" height="39.6212"/>
   <object id="15" name="target" x="760" y="-2.66667" width="70" height="63.3333"/>
-  <object id="16" x="46" y="1999.33"/>
-  <object id="17" x="30.6667" y="1998.67"/>
-  <object id="18" x="306.667" y="885.333" width="1.33333" height="1.33333"/>
  </objectgroup>
 </map>
