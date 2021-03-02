@@ -116,7 +116,6 @@ export default class MainScene extends Phaser.Scene {
 
       switch (name) {
         case 'car_spawn': {
-          console.log(this.twoDToIso(new Phaser.Math.Vector2(192, 166)));
           const { x: xT, y: yT } = this.twoDToIso(new Phaser.Math.Vector2(x, y));
           this.car = new Car(this, xT + this.tileOffset.x, yT + this.tileOffset.y);
           this.cameras.main.startFollow(this.car.sprite, true);
@@ -134,7 +133,7 @@ export default class MainScene extends Phaser.Scene {
         }
       }
     });
-
+    this.car.setupCollision(this.target);
     //Playing
     const circle = this.add.circle(400, 400, 30, 0x00ff00);
     this.followCircle = this.matter.add.gameObject(circle) as Phaser.Physics.Matter.Sprite; // Trick it
@@ -153,16 +152,7 @@ export default class MainScene extends Phaser.Scene {
       console.log('x, y', pointer.position);
       console.log('world x,y', (pointer as any).worldX, (pointer as any).worldY);
     });
-    // this.matter.world.on('collisionstart', (event, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType) => {
-    //   if (
-    //     bodyA.label === 'offroad' &&
-    //     bodyB.gameObject! instanceof Phaser.Physics.Matter.Sprite &&
-    //     (this.car.sprite.body as MatterJS.BodyType).id === bodyB.id
-    //   ) {
-    //     // console.log('is going offroad!');
-    //     // this.car.stop()
-    //   }
-    // });
+ 
   }
 
   update() {

@@ -1,28 +1,43 @@
+import Phaser from 'phaser';
 import carPhysicShapes from '../../assets/car-physic-shapes.json';
+import { sharedInstance as events, GameEvents } from '../infrastructure/EventCenter';
+export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
+  shape?: any;
+};
+
 export class Car {
   public sprite: Phaser.Physics.Matter.Sprite;
   private lastSetFrame: string;
-  constructor(public scene: Phaser.Scene, x: number, y: number) {
-    this.init(x, y);
+  constructor(public scene: Phaser.Scene, private initialX: number, private initialY: number) {
+    this.init(initialX, initialY);
   }
   private init(x: number, y: number) {
     this.sprite = this.scene.matter.add.sprite(x, y, 'car', 'sedan_W.png');
-    this.sprite.setInteractive();
-    this.sprite.setBody(carPhysicShapes.sedan_W);
-    this.sprite.setDisplaySize(128, 128);
+    this.sprite.setBody({
+      type: 'fromVerts',
+      y: -10,
+      verts:
+        'M 26 111 L 28 85 L 46 69 L 50 68 L 64 66 L 78 59 L 111 59 L 135 69 L 148 111 L 121 111 L 121 97 L 108 97 L 107 111 L 62 111 L 62 97 L 51 97 L 49 111'
+    });
+    // this.sprite.setScale(0.5);
     this.sprite.setFixedRotation();
+    this.sprite.setOnCollide(this.collissionHandler);
     this.lastSetFrame = 'W';
-    this.setupCollision();
-    // this.setInteractive({ shape: carPhysicShapes.sedan_W });
   }
-  private setupCollision() {
-    // this.sprite.on("")
-    // this.sprite.setOnCollide((data: MatterJS.ICollisionPair) => {
-    //   console.log('collision', data);
-    // });
+  public setupCollision(target: Phaser.Physics.Matter.Sprite) {
+    this.sprite.setOnCollideWith(target.body, (data: MatterJS.ICollisionPair) => {
+      console.log('collision with target', data);
+    });
   }
-  reset() {
-    this.scene.scene.restart();
+  collissionHandler(data: MatterJS.ICollisionPair) {
+    console.log('collistion', data);
+    // Handle when colliding with the road (stop?) 
+  }
+  stop() {
+    //Do something else
+    this.sprite.setPosition(this.initialX, this.initialY);
+    this.sprite.setStatic(true);
+    events.emit(GameEvents.CarOutsideOfBounds);
   }
   update(xVel: number, yVel: number) {
     // let carFrame = '';
