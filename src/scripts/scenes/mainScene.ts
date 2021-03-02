@@ -1,3 +1,4 @@
+import { GameEvents } from './../infrastructure/EventCenter';
 import PhaserLogo from '../objects/phaserLogo';
 import FpsText from '../objects/fpsText';
 import carPhysicShapes from '../../assets/car-physic-shapes.json';
@@ -14,6 +15,7 @@ export default class MainScene extends Phaser.Scene {
   followCircle: Phaser.Physics.Matter.Sprite;
   target: Phaser.Physics.Matter.Sprite;
   map: Phaser.Tilemaps.Tilemap;
+  private readonly tileOffset = { x: 256, y: 310 };
   constructor() {
     super({ key: 'MainScene' });
   }
@@ -32,15 +34,18 @@ export default class MainScene extends Phaser.Scene {
 
     //Import car images and json sheet
     this.load.atlas('car', 'sedan-sheet.png', 'sedan-sheet.json');
+    // this.load.atlas("car", "sport-car.png", "sport-car.json");
   }
   create() {
     // this.add.tilemap('roadsMap');
     this.map = this.make.tilemap({ key: 'roadsMap' });
+
     // this.scale.setGameSize(this.map.widthInPixels, this.map.heightInPixels);
     this.matter.world.createDebugGraphic();
     this.matter.world.drawDebug = true;
     const { width, height, autoCenter } = this.scale;
     console.log('scale', this.scale);
+
     const naturePaths = this.map.addTilesetImage('nature-path-sheet', 'paths');
     const roadsTileset = this.map.addTilesetImage('roads', 'roads-sheet');
     const treesTileset = this.map.addTilesetImage('trees', 'trees');
@@ -49,11 +54,11 @@ export default class MainScene extends Phaser.Scene {
     const roads = this.map.createLayer('middle', [roadsTileset, naturePaths]);
     const trees = this.map.createLayer('trees', treesTileset);
     const mountain = this.map.createLayer('mountain_bottom', mountaintileSet);
+
     bottom.setCollisionByProperty({ collides: true }); // just when we add the car.
-
     this.matter.world.convertTilemapLayer(bottom);
-
     const graphics = this.add.graphics();
+
     bottom.forEachTile((tile) => {
       const tileWorldPos = bottom.tileToWorldXY(tile.x, tile.y); //this is the tile as 1,0
       const collisionGroup: any = naturePaths.getTileCollisionGroup(tile.index);
@@ -87,8 +92,8 @@ export default class MainScene extends Phaser.Scene {
             });
           }
           (tile.physics as any).matterBody.body = this.matter.add.fromVertices(
-            tileWorldPos.x + 250,
-            tileWorldPos.y + 310,
+            tileWorldPos.x + this.tileOffset.x,
+            tileWorldPos.y + this.tileOffset.y,
             points,
             {
               isStatic: true,
@@ -111,17 +116,21 @@ export default class MainScene extends Phaser.Scene {
 
       switch (name) {
         case 'car_spawn': {
-          const { x: xT, y: yT } = thatMap.tileToWorldXY(12, 31);
-          this.car = new Car(this, xT + 250, yT + 310);
+          console.log(this.twoDToIso(new Phaser.Math.Vector2(192, 166)));
+          const { x: xT, y: yT } = this.twoDToIso(new Phaser.Math.Vector2(x, y));
+          this.car = new Car(this, xT + this.tileOffset.x, yT + this.tileOffset.y);
           this.cameras.main.startFollow(this.car.sprite, true);
           break;
         }
         case 'target': {
-          const { x: xT, y: yT } = thatMap.tileToWorldXY(18, 0);
-          this.target = this.matter.add.gameObject(this.add.rectangle(xT + 250, yT + 310, width, height, 0x0000ff), {
-            isStatic: true,
-            isSensor: true
-          }) as Phaser.Physics.Matter.Sprite;
+          const { x: xT, y: yT } = this.twoDToIso(new Phaser.Math.Vector2(x, y));
+          this.target = this.matter.add.gameObject(
+            this.add.rectangle(xT + this.tileOffset.x, yT + this.tileOffset.y, width, height, 0x0000ff),
+            {
+              isStatic: true,
+              isSensor: true
+            }
+          ) as Phaser.Physics.Matter.Sprite;
         }
       }
     });
@@ -144,9 +153,16 @@ export default class MainScene extends Phaser.Scene {
       console.log('x, y', pointer.position);
       console.log('world x,y', (pointer as any).worldX, (pointer as any).worldY);
     });
-    this.matter.world.on('collisionstart', (event, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType) => {
-      console.log('inside collision', event, bodyA, bodyB);    
-    });
+    // this.matter.world.on('collisionstart', (event, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType) => {
+    //   if (
+    //     bodyA.label === 'offroad' &&
+    //     bodyB.gameObject! instanceof Phaser.Physics.Matter.Sprite &&
+    //     (this.car.sprite.body as MatterJS.BodyType).id === bodyB.id
+    //   ) {
+    //     // console.log('is going offroad!');
+    //     // this.car.stop()
+    //   }
+    // });
   }
 
   update() {
