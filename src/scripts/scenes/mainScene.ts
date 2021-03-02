@@ -1,6 +1,8 @@
 import FpsText from '../objects/fpsText';
 import { Car } from '../objects/Car';
 import Phaser from 'phaser';
+import { sharedInstance } from '../infrastructure/EventCenter';
+import { BATTERY_LEVEL_CHANGED_EVENT } from './UI';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
 };
@@ -17,7 +19,12 @@ export default class MainScene extends Phaser.Scene {
     super({ key: 'MainScene' });
   }
   init() {
+    console.log('heree1');
     this.cursors = this.input.keyboard.createCursorKeys();
+    let batteryLevel = 100;
+    setInterval(() => {
+      sharedInstance.emit(BATTERY_LEVEL_CHANGED_EVENT, batteryLevel--);
+    }, 1000);
   }
   preload() {
     this.load.setPath('../../assets');
@@ -35,6 +42,7 @@ export default class MainScene extends Phaser.Scene {
   }
   create() {
     this.scene.launch('BatteryScene');
+    this.scene.launch('ui');
     // this.add.tilemap('roadsMap');
     this.map = this.make.tilemap({ key: 'roadsMap' });
 
@@ -144,6 +152,9 @@ export default class MainScene extends Phaser.Scene {
       console.log('pointer down', pointer);
       console.log('x, y', pointer.position);
       console.log('world x,y', (pointer as any).worldX, (pointer as any).worldY);
+    });
+    this.matter.world.on('collisionstart', (event, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType) => {
+      console.log('inside collision', event, bodyA, bodyB);
     });
   }
 

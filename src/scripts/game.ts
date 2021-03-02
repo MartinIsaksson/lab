@@ -3,6 +3,7 @@ import ArcadeScene from './scenes/arcadeScene';
 import BatteryScene from './scenes/BatteryScene';
 import MainScene from './scenes/mainScene';
 import PreloadScene from './scenes/preloadScene';
+import UI from './scenes/UI';
 
 const DEFAULT_WIDTH = 1280;
 const DEFAULT_HEIGHT = 720;
@@ -17,7 +18,7 @@ const config: Phaser.Types.Core.GameConfig = {
     width: DEFAULT_WIDTH,
     height: DEFAULT_HEIGHT
   },
-  scene: [PreloadScene, MainScene, ArcadeScene, BatteryScene],
+  scene: [PreloadScene, MainScene, ArcadeScene, UI, BatteryScene],
   // physics: {
   //   default: 'arcade',
   //   arcade: {
