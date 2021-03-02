@@ -8,7 +8,7 @@ const DEFAULT_HEIGHT = 720;
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.WEBGL,
-  backgroundColor: '#ffffff',
+  backgroundColor: '#2fe7c5',
   scale: {
     parent: 'phaser-game',
     mode: Phaser.Scale.FIT,

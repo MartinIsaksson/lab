@@ -7,11 +7,22 @@ export class Car {
   }
   private init(x: number, y: number) {
     this.sprite = this.scene.matter.add.sprite(x, y, 'car', 'sedan_W.png');
+    this.sprite.setInteractive();
     this.sprite.setBody(carPhysicShapes.sedan_W);
-    this.sprite.setDisplaySize(256, 256);
+    this.sprite.setDisplaySize(128, 128);
     this.sprite.setFixedRotation();
     this.lastSetFrame = 'W';
+    this.setupCollision();
     // this.setInteractive({ shape: carPhysicShapes.sedan_W });
+  }
+  private setupCollision() {
+    // this.sprite.on("")
+    // this.sprite.setOnCollide((data: MatterJS.ICollisionPair) => {
+    //   console.log('collision', data);
+    // });
+  }
+  reset() {
+    this.scene.scene.restart();
   }
   update(xVel: number, yVel: number) {
     // let carFrame = '';
