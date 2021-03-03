@@ -6,7 +6,7 @@ export default class BatteryScene extends Phaser.Scene {
   // private sprite: Phaser.GameObjects.Sprite;
   private chargeRect: Phaser.GameObjects.Rectangle;
   private batteryLevel: number;
-  private readonly batteryDrainConst = 1;
+  private readonly batteryDrainConst = 1.5;
   private readonly batteryChargeConst = 20;
   graphics: Phaser.GameObjects.Graphics;
   image: Phaser.GameObjects.Image;
@@ -74,7 +74,7 @@ export default class BatteryScene extends Phaser.Scene {
     this.tweens.addCounter({
       from: this.batteryLevel,
       to: currentBatteryLevel,
-      duration: 20,
+      duration: 40,
       onUpdate: (tween) => {
         const batteryLevel = tween.getValue();
         this.setBatteryBar(batteryLevel);

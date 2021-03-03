@@ -3,7 +3,6 @@ export interface Tween {
   onComplete?: Phaser.Types.Tweens.TweenOnCompleteCallback;
   x: { value: number; duration: number };
   y: { value: number; duration: number };
-  onComplete?: Function;
 }
 
 export enum PowerPlant {

@@ -48,9 +48,8 @@ export class Car {
   }
   stop() {
     //Do something else
-    this.sprite.setPosition(this.initialX, this.initialY);
     this.sprite.setStatic(true);
-    // events.emit(GameEvents.CarOutsideOfBounds);
+    this.scene.tweens.pauseAll();
   }
   goToTarget(target: Vector2) {
     const tile = this.roadsTilemap.getTileAtWorldXY(
@@ -99,12 +98,10 @@ export class Car {
         targets: this.sprite,
         onComplete: (tween) => {
           events.emit(GameEvents.BatteryDrain);
+          car.setRotation(tile, nextTile);
         },
         x: { value: tile.x + tileOffset.x, duration: 200 },
-        y: { value: tile.y + tileOffset.y, duration: 200 },
-        onComplete: () => {
-          car.setRotation(tile, nextTile);
-        }
+        y: { value: tile.y + tileOffset.y, duration: 200 }
       });
     }
     this.scene.tweens.timeline({ tweens: tweens });
