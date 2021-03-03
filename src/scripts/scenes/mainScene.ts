@@ -1,9 +1,6 @@
-import { GameEvents } from './../infrastructure/EventCenter';
-import PhaserLogo from '../objects/phaserLogo';
 import FpsText from '../objects/fpsText';
-import carPhysicShapes from '../../assets/car-physic-shapes.json';
-import tileMap from '../../assets/map.json';
 import { Car } from '../objects/Car';
+import Phaser from 'phaser';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
 };
@@ -37,13 +34,13 @@ export default class MainScene extends Phaser.Scene {
     // this.load.atlas("car", "sport-car.png", "sport-car.json");
   }
   create() {
+    this.scene.launch('BatteryScene');
     // this.add.tilemap('roadsMap');
     this.map = this.make.tilemap({ key: 'roadsMap' });
 
     // this.scale.setGameSize(this.map.widthInPixels, this.map.heightInPixels);
     this.matter.world.createDebugGraphic();
     this.matter.world.drawDebug = true;
-    const { width, height, autoCenter } = this.scale;
     console.log('scale', this.scale);
 
     const naturePaths = this.map.addTilesetImage('nature-path-sheet', 'paths');
@@ -51,9 +48,6 @@ export default class MainScene extends Phaser.Scene {
     const treesTileset = this.map.addTilesetImage('trees', 'trees');
     const mountaintileSet = this.map.addTilesetImage('mountain', 'mountain');
     const bottom = this.map.createLayer('bottom', naturePaths);
-    const roads = this.map.createLayer('middle', [roadsTileset, naturePaths]);
-    const trees = this.map.createLayer('trees', treesTileset);
-    const mountain = this.map.createLayer('mountain_bottom', mountaintileSet);
 
     bottom.setCollisionByProperty({ collides: true }); // just when we add the car.
     this.matter.world.convertTilemapLayer(bottom);
@@ -112,7 +106,6 @@ export default class MainScene extends Phaser.Scene {
     const objectsLayer = this.map.getObjectLayer('objects');
     objectsLayer.objects.forEach((objData) => {
       const { x = 0, y = 0, name, width = 0, height = 0 } = objData;
-      const thatMap = this.map;
 
       switch (name) {
         case 'car_spawn': {
@@ -140,7 +133,7 @@ export default class MainScene extends Phaser.Scene {
     this.fpsText = new FpsText(this);
 
     // this.cameras.main.setSize(1920, 1080);
-    // this.cameras.main.zoom = 0.5;
+    this.cameras.main.zoom = 0.5;
     this.cameras.main.x -= 300;
     this.cameras.main.y -= 200;
 
@@ -152,7 +145,6 @@ export default class MainScene extends Phaser.Scene {
       console.log('x, y', pointer.position);
       console.log('world x,y', (pointer as any).worldX, (pointer as any).worldY);
     });
- 
   }
 
   update() {

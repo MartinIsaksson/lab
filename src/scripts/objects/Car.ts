@@ -30,8 +30,8 @@ export class Car {
     });
   }
   collissionHandler(data: MatterJS.ICollisionPair) {
-    console.log('collistion', data);
-    // Handle when colliding with the road (stop?) 
+    //    console.log('collistion', data);
+    // Handle when colliding with the road (stop?)
   }
   stop() {
     //Do something else
