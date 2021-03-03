@@ -1,4 +1,5 @@
 import EasyStar, { js } from 'easystarjs';
+import Phaser from 'phaser';
 import { Car } from '../objects/Car';
 import FpsText from '../objects/fpsText';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
@@ -42,14 +43,9 @@ export default class MainScene extends Phaser.Scene {
   }
 
   create() {
-    // this.add.tilemap('roadsMap');
-
+    this.scene.launch('BatteryScene');
     this.map = this.make.tilemap({ key: 'roadsMap' });
     this.finder = new EasyStar.js();
-    // this.scale.setGameSize(this.map.widthInPixels, this.map.heightInPixels);
-
-    const { width, height, autoCenter } = this.scale;
-    console.log('scale', this.scale);
 
     const roads = this.buildMap();
     this.enableDebug(roads);
@@ -76,10 +72,17 @@ export default class MainScene extends Phaser.Scene {
           // // this.cameras.main.startFollow(this.car.sprite, true);
           break;
         }
-        case 'target':
-          const position = this.twoDToIso(new Phaser.Math.Vector2(x, y));
-          // this.target = position;
-          break;
+        case 'target': {
+          const { x: xT, y: yT } = this.twoDToIso(new Phaser.Math.Vector2(x, y));
+          const targetGameobject = this.matter.add.gameObject(
+            this.add.rectangle(xT + this.tileOffset.x, yT + this.tileOffset.y, width, height, 0x0000ff),
+            {
+              isStatic: true,
+              isSensor: true
+            }
+          ) as Phaser.Physics.Matter.Sprite;
+          this.target = new Phaser.Math.Vector2(targetGameobject.x, targetGameobject.y);
+        }
       }
     });
 
@@ -87,10 +90,6 @@ export default class MainScene extends Phaser.Scene {
     const circle = this.add.circle(400, 400, 30, 0x00ff00);
     this.followCircle = this.matter.add.gameObject(circle) as Phaser.Physics.Matter.Sprite; // Trick it
     this.fpsText = new FpsText(this);
-    // this.cameras.main.setSize(1920, 1080);
-    // this.cameras.main.zoom = 0.5;
-    // this.cameras.main.x -= 300;
-    // this.cameras.main.y -= 200;
 
     this.input.on('gameobjectdown', (pointer: any, gameObject: any) => {
       console.log('clicked!', pointer, gameObject);
@@ -99,21 +98,9 @@ export default class MainScene extends Phaser.Scene {
       console.log('pointer down', pointer);
       console.log('x, y', pointer.position);
       console.log('world x,y', pointer.worldX, pointer.worldY);
-      // this.target = new Phaser.Math.Vector2(pointer.worldX, pointer.worldY);
       this.handleClick(pointer);
     });
-    // this.matter.world.on('collisionstart', (event, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType) => {
-    //   if (
-    //     bodyA.label === 'offroad' &&
-    //     bodyB.gameObject! instanceof Phaser.Physics.Matter.Sprite &&
-    //     (this.car.sprite.body as MatterJS.BodyType).id === bodyB.id
-    //   ) {
-    //     // console.log('is going offroad!');
-    //     // this.car.stop()
-    //   }
-    // });
     this.buildPathfindingMap(roads);
-    // this.findAcceptableTiles(roadsTileset);
   }
 
   private buildMap() {
@@ -269,25 +256,4 @@ export default class MainScene extends Phaser.Scene {
     tempPt.y = (pt.x + pt.y) / 2;
     return tempPt;
   }
-}
-
-const velocityToTarget = (
-  from: Phaser.Math.Vector2 | MatterJS.Vector,
-  to: Phaser.Math.Vector2 | MatterJS.Vector,
-  speed = 1,
-  followLength = 160
-): VelocityToTarget => {
-  const distanceX = Phaser.Math.Difference(from.x, to.x) > followLength;
-  const distanceY = Phaser.Math.Difference(from.y, to.y) > followLength;
-  const direction = Math.atan((to.x - from.x) / (to.y - from.y));
-  const speed2 = to.y >= from.y ? speed : -speed;
-
-  return {
-    velX: distanceX ? speed2 * Math.sin(direction) : 0,
-    velY: distanceY ? speed2 * Math.cos(direction) : 0
-  };
-};
-interface VelocityToTarget {
-  velX: number;
-  velY: number;
 }

@@ -1,0 +1,76 @@
+{"frames": [
+
+{
+	"filename": "sedanSports_E.png",
+	"frame": {"x":1,"y":71,"w":88,"h":53},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":84,"y":116,"w":88,"h":53},
+	"sourceSize": {"w":256,"h":256}
+},
+{
+	"filename": "sedanSports_N.png",
+	"frame": {"x":283,"y":69,"w":48,"h":56},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":104,"y":119,"w":48,"h":56},
+	"sourceSize": {"w":256,"h":256}
+},
+{
+	"filename": "sedanSports_NE.png",
+	"frame": {"x":189,"y":1,"w":92,"h":60},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":82,"y":116,"w":92,"h":60},
+	"sourceSize": {"w":256,"h":256}
+},
+{
+	"filename": "sedanSports_NW.png",
+	"frame": {"x":189,"y":63,"w":92,"h":60},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":82,"y":116,"w":92,"h":60},
+	"sourceSize": {"w":256,"h":256}
+},
+{
+	"filename": "sedanSports_S.png",
+	"frame": {"x":283,"y":1,"w":48,"h":66},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":104,"y":109,"w":48,"h":66},
+	"sourceSize": {"w":256,"h":256}
+},
+{
+	"filename": "sedanSports_SE.png",
+	"frame": {"x":1,"y":1,"w":92,"h":68},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":82,"y":108,"w":92,"h":68},
+	"sourceSize": {"w":256,"h":256}
+},
+{
+	"filename": "sedanSports_SW.png",
+	"frame": {"x":95,"y":1,"w":92,"h":68},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":82,"y":108,"w":92,"h":68},
+	"sourceSize": {"w":256,"h":256}
+},
+{
+	"filename": "sedanSports_W.png",
+	"frame": {"x":91,"y":71,"w":88,"h":53},
+	"rotated": false,
+	"trimmed": true,
+	"spriteSourceSize": {"x":84,"y":116,"w":88,"h":53},
+	"sourceSize": {"w":256,"h":256}
+}],
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "sport-car.png",
+	"format": "RGBA8888",
+	"size": {"w":332,"h":126},
+	"scale": "0.5",
+	"smartupdate": "$TexturePacker:SmartUpdate:1d6fa1b616485eec1d6197b0a1b35d5a:665bf613007bdea384157009ae4d6b79:6197bcb83c8eaac7866ccc60b9ec359f$"
+}
+}
