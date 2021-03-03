@@ -11,6 +11,7 @@ export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & 
 export class Car {
   public sprite: Phaser.Physics.Matter.Sprite;
   private lastSetFrame: string;
+  private gfx: Phaser.GameObjects.Graphics;
   pathFinder: Pathfinder;
   constructor(
     public scene: Phaser.Scene,
@@ -22,6 +23,7 @@ export class Car {
     this.init(initialX, initialY);
     this.pathFinder = new Pathfinder();
     this.pathFinder.buildPathfindingMap(roadsTilemap);
+    this.gfx = this.scene.add.graphics();
   }
   private init(x: number, y: number) {
     this.sprite = this.scene.matter.add.sprite(x, y, 'car', 'sedan_W.png');
@@ -70,6 +72,19 @@ export class Car {
     const car = this;
     // this.pathFinder.buildPathfindingMap(this.roadsTilemap);
     this.pathFinder.findPath(tile.x, tile.y, targetTile.x, targetTile.y, (path) => {
+      path.forEach((tile, idx, self) => {
+        const tilePos = this.roadsTilemap.tileToWorldXY(tile.x, tile.y);
+        let nextTile = self[idx + 1];
+        if (!nextTile) nextTile = tile;
+        const nextTilePos = this.roadsTilemap.tileToWorldXY(nextTile.x, nextTile.y);
+        this.gfx.lineStyle(3, 0xff0000, 1);
+        this.gfx.lineBetween(
+          tilePos.x + tileOffset.x,
+          tilePos.y + tileOffset.y,
+          nextTilePos.x + tileOffset.x,
+          nextTilePos.y + tileOffset.y
+        );
+      });
       car.moveCar(path);
     });
     this.pathFinder.calculate();
