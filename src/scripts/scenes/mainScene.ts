@@ -223,27 +223,6 @@ export default class MainScene extends Phaser.Scene {
     this.finder.setAcceptableTiles(acceptableTiles);
   }
 
-  // findAcceptableTiles() {
-  //   let tileset = this.map.tilesets[1];
-  //   let properties = tileset.tileProperties;
-  //   let acceptableTiles: number[] = [];
-  //   let total = tileset.total;
-  //   this.map.tilesets.forEach((tileset) => {
-  //     for (let i = tileset.firstgid - 1; i < 32; i++) {
-  //       // firstgid and total are fields from Tiled that indicate the range of IDs that the tiles can take in that tileset
-  //       if (!properties.hasOwnProperty(0)) {
-  //         // If there is no property indicated at all, it means it's a walkable tile
-  //         acceptableTiles.push(i + 1);
-  //         continue;
-  //       }
-  //       if (!properties[i].collide) acceptableTiles.push(i + 1);
-  //       if (properties[i].cost) this.finder.setTileCost(i + 1, properties[i].cost); // If there is a cost attached to the tile, let's register it
-  //     }
-  //   });
-  //   this.finder.setAcceptableTiles(acceptableTiles);
-  //   // this.finder.setAcceptableTiles(...new Set(this.finder.))
-  // }
-
   handleClick(pointer: Phaser.Input.Pointer) {
     let x = this.cameras.main.scrollX + pointer.x;
     let y = this.cameras.main.scrollY + pointer.y;
