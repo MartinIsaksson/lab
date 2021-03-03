@@ -77,13 +77,13 @@ export class Car {
         let nextTile = self[idx + 1];
         if (!nextTile) nextTile = tile;
         const nextTilePos = this.roadsTilemap.tileToWorldXY(nextTile.x, nextTile.y);
-        this.gfx.lineStyle(3, 0xff0000, 1);
-        this.gfx.lineBetween(
-          tilePos.x + tileOffset.x,
-          tilePos.y + tileOffset.y,
-          nextTilePos.x + tileOffset.x,
-          nextTilePos.y + tileOffset.y
-        );
+        // this.gfx.lineStyle(3, 0xff0000, 1);
+        // this.gfx.lineBetween(
+        //   tilePos.x + tileOffset.x,
+        //   tilePos.y + tileOffset.y,
+        //   nextTilePos.x + tileOffset.x,
+        //   nextTilePos.y + tileOffset.y
+        // );
       });
       car.moveCar(path);
     });
