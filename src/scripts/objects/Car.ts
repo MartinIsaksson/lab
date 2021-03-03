@@ -1,6 +1,10 @@
+import { Vector2 } from './../infrastructure/types';
 import Phaser from 'phaser';
 import carPhysicShapes from '../../assets/car-physic-shapes.json';
+import { tileOffset } from '../infrastructure/constants';
 import { sharedInstance as events, GameEvents } from '../infrastructure/EventCenter';
+import { Tween } from '../infrastructure/interfaces';
+import { Pathfinder } from './pathfinder';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
 };
@@ -8,8 +12,16 @@ export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & 
 export class Car {
   public sprite: Phaser.Physics.Matter.Sprite;
   private lastSetFrame: string;
-  constructor(public scene: Phaser.Scene, private initialX: number, private initialY: number) {
+  pathFinder: Pathfinder;
+  constructor(
+    public scene: Phaser.Scene,
+    private initialX: number,
+    private initialY: number,
+    private roadsTilemap: Phaser.Tilemaps.TilemapLayer,
+    private map: Phaser.Tilemaps.Tilemap
+  ) {
     this.init(initialX, initialY);
+    this.pathFinder = new Pathfinder();
   }
   private init(x: number, y: number) {
     this.sprite = this.scene.matter.add.sprite(x, y, 'car', 'sedan_W.png');
@@ -39,39 +51,46 @@ export class Car {
     this.sprite.setStatic(true);
     events.emit(GameEvents.CarOutsideOfBounds);
   }
-  update(xVel: number, yVel: number) {
-    // let carFrame = '';
+  goToTarget(target: Vector2) {
+    const tile = this.roadsTilemap.getTileAtWorldXY(
+      this.sprite.x - tileOffset.x + this.map.tileWidth / 2,
+      this.sprite.y - tileOffset.y + this.map.tileHeight / 2
+    );
+    const targetTile = this.roadsTilemap.getTileAtWorldXY(
+      target.x - tileOffset.x + this.map.tileWidth / 2,
+      target.y - tileOffset.y + this.map.tileHeight / 2
+    );
+    const graphics = this.scene.add.graphics();
+    graphics.strokeRect(
+      target.x - tileOffset.x + this.map.tileWidth / 2,
+      target.y - tileOffset.y + this.map.tileHeight / 2,
+      50,
+      50
+    );
+    const car = this;
+    this.pathFinder.buildPathfindingMap(this.roadsTilemap);
+    this.pathFinder.findPath(tile.x, tile.y, targetTile.x, targetTile.y, (path) => {
+      car.moveCar(path);
+    });
+    this.pathFinder.calculate();
+  }
+  moveCar(path: { x: number; y: number }[]) {
+    // Sets up a list of tweens, one for each tile to walk, that will be chained by the timeline
+    let tweens: Tween[] = [];
+    for (let i = 0; i < path.length - 1; i++) {
+      let ex = path[i + 1].x;
+      let ey = path[i + 1].y;
+      const tile = this.roadsTilemap.tileToWorldXY(ex, ey);
+      tweens.push({
+        targets: this.sprite,
+        x: { value: tile.x + tileOffset.x, duration: 200 },
+        y: { value: tile.y + tileOffset.y, duration: 200 }
+      });
+    }
+    this.scene.tweens.timeline({ tweens: tweens });
+  }
 
-    // if (this.cursors.up.isDown) {
-    //   carFrame += 'N';
-    // } else if (this.cursors.down.isDown) {
-    //   carFrame += 'S';
-    // }
-    // if (this.cursors.left.isDown) {
-    //   carFrame += 'W';
-    // } else if (this.cursors.right.isDown) {
-    //   carFrame += 'E';
-    // }
-    // this.lastSetFrame = carFrame || this.lastSetFrame;
-    //#region car physics
-    // making the car  physics based after its shape
-    // const car = Object.assign({}, this.car);
-    // const physShape = carPhysicShapes[`sedan_${this.lastSetFrame}`];
-    // const physBody = this.matter.add.fromPhysicsEditor(this.car.x, this.car.y, physShape);
-    // physBody.gameObject = car.body.gameObject;
-    // physBody.ignoreGravity = true;
-    // this.car.setExistingBody(physBody);
-    // this.car.setDisplaySize(256, 256);
-    // this.car.setScale(0.5);
-    // this.car.setBody(carPhysicShapes[`sedan_${this.lastSetFrame}`], {scale: { // its working this way except for the scaling
-    //   x: 256,
-    //   y: 256
-    // }});
-    // const velY = carFrame.includes('N') ? -2 : carFrame.includes('S') ? 2 : 0;
-    // const velX = carFrame.includes('E') ? 2 : carFrame.includes('W') ? -2 : 0;
-    // this.car.setVelocity(velX, velY);
-    // this.car.setFixedRotation();
-    // this.car.setFrame(`sedan_${this.lastSetFrame}.png`);
-    this.sprite.setVelocity(xVel, yVel);
+  update(xVel: number, yVel: number) {
+    // this.sprite.setVelocity(xVel, yVel);
   }
 }

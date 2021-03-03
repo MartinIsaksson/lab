@@ -55,15 +55,13 @@ export default class MainScene extends Phaser.Scene {
         this.cameras.main.zoom *= 0.9;
       }
     });
-
     const objectsLayer = this.map.getObjectLayer('objects');
     objectsLayer.objects.forEach((objData) => {
       const { x = 0, y = 0, name, width = 0, height = 0 } = objData;
       switch (name) {
         case 'car_spawn': {
-          console.log(this.twoDToIso(new Vector2(192, 166)));
           const { x: xT, y: yT } = this.twoDToIso(new Vector2(x, y));
-          this.car = new Car(this, xT + tileOffset.x, yT + tileOffset.y, roads);
+          this.car = new Car(this, xT + tileOffset.x, yT + tileOffset.y, roads, this.map);
           // // this.cameras.main.startFollow(this.car.sprite, true);
           break;
         }
@@ -80,7 +78,9 @@ export default class MainScene extends Phaser.Scene {
         }
       }
     });
-
+    if (this.target && this.car) {
+      this.car.goToTarget(this.target);
+    }
     //Playing
     const circle = this.add.circle(400, 400, 30, 0x00ff00);
     this.followCircle = this.matter.add.gameObject(circle) as Phaser.Physics.Matter.Sprite; // Trick it

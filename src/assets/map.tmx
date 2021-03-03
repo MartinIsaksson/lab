@@ -391,6 +391,6 @@
    <ellipse/>
   </object>
   <object id="14" name="car_spawn" x="782.197" y="1992.5" width="39.2879" height="39.6212"/>
-  <object id="15" name="target" x="760" y="-2.66667" width="70" height="63.3333"/>
+  <object id="15" name="target" x="1984.42" y="960.288" width="63.5909" height="63.3333"/>
  </objectgroup>
 </map>
