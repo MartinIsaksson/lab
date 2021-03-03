@@ -14,7 +14,7 @@ export default class HighscoreScene extends Phaser.Scene {
   private backgroundRect: Phaser.GameObjects.Rectangle;
 
   constructor() {
-    super({ key: 'ui' });
+    super({ key: 'HighScore' });
   }
   init() {
     sharedInstance.on(GAME_COMPLETED_EVENT, this.showHighscore, this);

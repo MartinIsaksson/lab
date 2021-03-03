@@ -1,6 +1,9 @@
 import Phaser from 'phaser';
-import carPhysicShapes from '../../assets/car-physic-shapes.json';
-import { sharedInstance as events, GameEvents } from '../infrastructure/EventCenter';
+import { tileOffset } from '../infrastructure/constants';
+import { GameEvents, sharedInstance as events } from '../infrastructure/EventCenter';
+import { Tween } from '../infrastructure/interfaces';
+import { Vector2 } from './../infrastructure/types';
+import { Pathfinder } from './pathfinder';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
 };
@@ -8,8 +11,19 @@ export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & 
 export class Car {
   public sprite: Phaser.Physics.Matter.Sprite;
   private lastSetFrame: string;
-  constructor(public scene: Phaser.Scene, private initialX: number, private initialY: number) {
+  private gfx: Phaser.GameObjects.Graphics;
+  pathFinder: Pathfinder;
+  constructor(
+    public scene: Phaser.Scene,
+    private initialX: number,
+    private initialY: number,
+    private roadsTilemap: Phaser.Tilemaps.TilemapLayer,
+    private map: Phaser.Tilemaps.Tilemap
+  ) {
     this.init(initialX, initialY);
+    this.pathFinder = new Pathfinder();
+    this.pathFinder.buildPathfindingMap(roadsTilemap);
+    this.gfx = this.scene.add.graphics();
   }
   private init(x: number, y: number) {
     this.sprite = this.scene.matter.add.sprite(x, y, 'car', 'sedan_W.png');
@@ -23,6 +37,7 @@ export class Car {
     this.sprite.setFixedRotation();
     this.sprite.setOnCollide(this.collissionHandler);
     this.lastSetFrame = 'W';
+    events.on(GameEvents.BatteryEmpty, this.stop, this);
   }
   public setupCollision(target: Phaser.Physics.Matter.Sprite) {
     this.sprite.setOnCollideWith(target.body, (data: MatterJS.ICollisionPair) => {
@@ -35,43 +50,79 @@ export class Car {
   }
   stop() {
     //Do something else
-    this.sprite.setPosition(this.initialX, this.initialY);
     this.sprite.setStatic(true);
-    events.emit(GameEvents.CarOutsideOfBounds);
+    this.scene.tweens.pauseAll();
   }
-  update(xVel: number, yVel: number) {
-    // let carFrame = '';
+  goToTarget(target: Vector2) {
+    const tile = this.roadsTilemap.getTileAtWorldXY(
+      this.sprite.x - tileOffset.x + this.map.tileWidth / 2,
+      this.sprite.y - tileOffset.y + this.map.tileHeight / 2
+    );
+    const targetTile = this.roadsTilemap.getTileAtWorldXY(
+      target.x - tileOffset.x + this.map.tileWidth / 2,
+      target.y - tileOffset.y + this.map.tileHeight / 2
+    );
+    const graphics = this.scene.add.graphics();
+    graphics.strokeRect(
+      target.x - tileOffset.x + this.map.tileWidth / 2,
+      target.y - tileOffset.y + this.map.tileHeight / 2,
+      50,
+      50
+    );
+    const car = this;
+    // this.pathFinder.buildPathfindingMap(this.roadsTilemap);
+    this.pathFinder.findPath(tile.x, tile.y, targetTile.x, targetTile.y, (path) => {
+      path.forEach((tile, idx, self) => {
+        const tilePos = this.roadsTilemap.tileToWorldXY(tile.x, tile.y);
+        let nextTile = self[idx + 1];
+        if (!nextTile) nextTile = tile;
+        const nextTilePos = this.roadsTilemap.tileToWorldXY(nextTile.x, nextTile.y);
+        this.gfx.lineStyle(3, 0xff0000, 1);
+        this.gfx.lineBetween(
+          tilePos.x + tileOffset.x,
+          tilePos.y + tileOffset.y,
+          nextTilePos.x + tileOffset.x,
+          nextTilePos.y + tileOffset.y
+        );
+      });
+      car.moveCar(path);
+    });
+    this.pathFinder.calculate();
+  }
+  setRotation(tileA: Vector2, tileB: Vector2) {
+    const angle = (((Phaser.Math.Angle.BetweenPoints(tileA, tileB) * Phaser.Math.PI2 * 100) % 360) + 360) % 360;
+    let dir = 'E';
+    if (angle >= 0 && angle < 90) dir = 'NE';
+    if (angle >= 90 && angle < 180) dir = 'NW';
+    if (angle >= 180 && angle < 270) dir = 'SW';
+    if (angle >= 270 && angle < 360) dir = 'SE';
 
-    // if (this.cursors.up.isDown) {
-    //   carFrame += 'N';
-    // } else if (this.cursors.down.isDown) {
-    //   carFrame += 'S';
-    // }
-    // if (this.cursors.left.isDown) {
-    //   carFrame += 'W';
-    // } else if (this.cursors.right.isDown) {
-    //   carFrame += 'E';
-    // }
-    // this.lastSetFrame = carFrame || this.lastSetFrame;
-    //#region car physics
-    // making the car  physics based after its shape
-    // const car = Object.assign({}, this.car);
-    // const physShape = carPhysicShapes[`sedan_${this.lastSetFrame}`];
-    // const physBody = this.matter.add.fromPhysicsEditor(this.car.x, this.car.y, physShape);
-    // physBody.gameObject = car.body.gameObject;
-    // physBody.ignoreGravity = true;
-    // this.car.setExistingBody(physBody);
-    // this.car.setDisplaySize(256, 256);
-    // this.car.setScale(0.5);
-    // this.car.setBody(carPhysicShapes[`sedan_${this.lastSetFrame}`], {scale: { // its working this way except for the scaling
-    //   x: 256,
-    //   y: 256
-    // }});
-    // const velY = carFrame.includes('N') ? -2 : carFrame.includes('S') ? 2 : 0;
-    // const velX = carFrame.includes('E') ? 2 : carFrame.includes('W') ? -2 : 0;
-    // this.car.setVelocity(velX, velY);
-    // this.car.setFixedRotation();
-    // this.car.setFrame(`sedan_${this.lastSetFrame}.png`);
-    this.sprite.setVelocity(xVel, yVel);
+    this.sprite.setFrame(`sedan_${dir}.png`);
+  }
+
+  moveCar(path: { x: number; y: number }[]) {
+    // Sets up a list of tweens, one for each tile to walk, that will be chained by the timeline
+    let tweens: Tween[] = [];
+    for (let i = 0; i < path.length - 1; i++) {
+      let thisPath = path[i + 1];
+      let nextPath = path[i + 2] || thisPath;
+      const tile = this.roadsTilemap.tileToWorldXY(thisPath.x, thisPath.y);
+      const nextTile = this.roadsTilemap.tileToWorldXY(nextPath.x, nextPath.y);
+      const car = this;
+      tweens.push({
+        targets: this.sprite,
+        onComplete: (tween) => {
+          events.emit(GameEvents.BatteryDrain);
+          car.setRotation(tile, nextTile);
+        },
+        x: { value: tile.x + tileOffset.x, duration: 200 },
+        y: { value: tile.y + tileOffset.y, duration: 200 }
+      });
+    }
+    this.scene.tweens.timeline({ tweens: tweens });
+  }
+
+  update() {
+    // this.sprite.setVelocity(xVel, yVel);
   }
 }

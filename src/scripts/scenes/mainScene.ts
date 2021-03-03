@@ -1,7 +1,10 @@
-import FpsText from '../objects/fpsText';
-import { Car } from '../objects/Car';
+import EasyStar, { js } from 'easystarjs';
 import Phaser from 'phaser';
-import { sharedInstance } from '../infrastructure/EventCenter';
+import { tileOffset } from '../infrastructure/constants';
+import { Car } from '../objects/Car';
+import FpsText from '../objects/fpsText';
+import { Tween } from '../infrastructure/interfaces';
+import { Vector2 } from './../infrastructure/types';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
 };
@@ -11,9 +14,10 @@ export default class MainScene extends Phaser.Scene {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   car: Car;
   followCircle: Phaser.Physics.Matter.Sprite;
-  target: Phaser.Physics.Matter.Sprite;
+  target: Phaser.Math.Vector2;
   map: Phaser.Tilemaps.Tilemap;
-  private readonly tileOffset = { x: 256, y: 310 };
+  finder: js;
+
   constructor() {
     super({ key: 'MainScene' });
   }
@@ -34,26 +38,79 @@ export default class MainScene extends Phaser.Scene {
     this.load.atlas('car', 'sedan-sheet.png', 'sedan-sheet.json');
     // this.load.atlas("car", "sport-car.png", "sport-car.json");
   }
+
   create() {
     this.scene.launch('BatteryScene');
-    this.scene.launch('ui');
+    this.scene.launch('HighScore');
     // this.add.tilemap('roadsMap');
     this.map = this.make.tilemap({ key: 'roadsMap' });
+    this.finder = new EasyStar.js();
 
-    // this.scale.setGameSize(this.map.widthInPixels, this.map.heightInPixels);
-    this.matter.world.createDebugGraphic();
-    this.matter.world.drawDebug = true;
-    console.log('scale', this.scale);
+    const roads = this.buildMap();
+    this.enableDebug(roads);
 
+    this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
+      if (deltaY < 0) {
+        this.cameras.main.zoom *= 1.1;
+      }
+      if (deltaY > 0) {
+        this.cameras.main.zoom *= 0.9;
+      }
+    });
+    const objectsLayer = this.map.getObjectLayer('objects');
+    objectsLayer.objects.forEach((objData) => {
+      const { x = 0, y = 0, name, width = 0, height = 0 } = objData;
+      switch (name) {
+        case 'car_spawn': {
+          const { x: xT, y: yT } = this.twoDToIso(new Vector2(x, y));
+          this.car = new Car(this, xT + tileOffset.x, yT + tileOffset.y, roads, this.map);
+          // // this.cameras.main.startFollow(this.car.sprite, true);
+          break;
+        }
+        case 'target': {
+          const { x: xT, y: yT } = this.twoDToIso(new Vector2(x, y));
+          const targetGameobject = this.matter.add.gameObject(
+            this.add.rectangle(xT + tileOffset.x, yT + tileOffset.y, width, height, 0x0000ff),
+            {
+              isStatic: true,
+              isSensor: true
+            }
+          ) as Phaser.Physics.Matter.Sprite;
+          this.target = new Vector2(targetGameobject.x, targetGameobject.y);
+        }
+      }
+    });
+    if (this.target && this.car) {
+      this.car.goToTarget(this.target);
+    }
+    //Playing
+    const circle = this.add.circle(400, 400, 30, 0x00ff00);
+    this.followCircle = this.matter.add.gameObject(circle) as Phaser.Physics.Matter.Sprite; // Trick it
+    this.fpsText = new FpsText(this);
+
+    this.input.on('gameobjectdown', (pointer: any, gameObject: any) => {
+      console.log('clicked!', pointer, gameObject);
+    });
+    this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+      console.log('pointer down', pointer);
+      console.log('x, y', pointer.position);
+      console.log('world x,y', pointer.worldX, pointer.worldY);
+      this.handleClick(pointer);
+    });
+    // this.buildPathfindingMap(roads);
+  }
+
+  private buildMap() {
     const naturePaths = this.map.addTilesetImage('nature-path-sheet', 'paths');
     const roadsTileset = this.map.addTilesetImage('roads', 'roads-sheet');
     const treesTileset = this.map.addTilesetImage('trees', 'trees');
     const mountaintileSet = this.map.addTilesetImage('mountain', 'mountain');
     const bottom = this.map.createLayer('bottom', naturePaths);
-
+    const roads = this.map.createLayer('middle', [naturePaths, roadsTileset]);
+    const trees = this.map.createLayer('trees', treesTileset);
+    const mountain = this.map.createLayer('mountain_bottom', mountaintileSet);
     bottom.setCollisionByProperty({ collides: true }); // just when we add the car.
     this.matter.world.convertTilemapLayer(bottom);
-    const graphics = this.add.graphics();
 
     bottom.forEachTile((tile) => {
       const tileWorldPos = bottom.tileToWorldXY(tile.x, tile.y); //this is the tile as 1,0
@@ -68,16 +125,7 @@ export default class MainScene extends Phaser.Scene {
         var object = objects[i];
         var objectX = tileWorldPos.x + object.x;
         var objectY = tileWorldPos.y + object.y;
-
-        // When objects are parsed by Phaser, they will be guaranteed to have one of the
-        // following properties if they are a rectangle/ellipse/polygon/polyline.
-        if (object.rectangle) {
-          graphics.strokeRect(objectX, objectY, object.width, object.height);
-        } else if (object.ellipse) {
-          // Ellipses in Tiled have a top-left origin, while ellipses in Phaser have a center
-          // origin
-          graphics.strokeEllipse(objectX + object.width / 2, objectY + object.height / 2, object.width, object.height);
-        } else if (object.polygon || object.polyline) {
+        if (object.polygon || object.polyline) {
           var originalPoints = object.polygon ? object.polygon : object.polyline;
           var points: any[] = [];
           for (var j = 0; j < originalPoints.length; j++) {
@@ -88,8 +136,8 @@ export default class MainScene extends Phaser.Scene {
             });
           }
           (tile.physics as any).matterBody.body = this.matter.add.fromVertices(
-            tileWorldPos.x + this.tileOffset.x,
-            tileWorldPos.y + this.tileOffset.y,
+            tileWorldPos.x + tileOffset.x,
+            tileWorldPos.y + tileOffset.y,
             points,
             {
               isStatic: true,
@@ -97,70 +145,67 @@ export default class MainScene extends Phaser.Scene {
               label: 'offroad'
             }
           );
-          // const collisionBody = (tile.physics as any).matterBody.body as MatterJS.BodyType;
-          // collisionBody.position = new Phaser.Math.Vector2(tileWorldPos.x + 250, tileWorldPos.y + 310);
-          // this.matter.world.add(collisionBody);
-          // this.collisionTiles.push((tile.physics as any).matterBody as Phaser.Physics.Matter.TileBody);
         }
       }
     });
+    return roads;
+  }
 
-    const objectsLayer = this.map.getObjectLayer('objects');
-    objectsLayer.objects.forEach((objData) => {
-      const { x = 0, y = 0, name, width = 0, height = 0 } = objData;
+  private enableDebug(roads: Phaser.Tilemaps.TilemapLayer) {
+    this.matter.world.createDebugGraphic();
+    this.matter.world.drawDebug = true;
+    const graphics = this.add.graphics();
+    const tileA = roads.getTileAt(0, 0);
+    const tileB = roads.getTileAt(31, 0);
+    const tileC = roads.getTileAt(31, 31);
+    const tileD = roads.getTileAt(0, 31);
 
-      switch (name) {
-        case 'car_spawn': {
-          const { x: xT, y: yT } = this.twoDToIso(new Phaser.Math.Vector2(x, y));
-          this.car = new Car(this, xT + this.tileOffset.x, yT + this.tileOffset.y);
-          this.cameras.main.startFollow(this.car.sprite, true);
-          break;
-        }
-        case 'target': {
-          const { x: xT, y: yT } = this.twoDToIso(new Phaser.Math.Vector2(x, y));
-          this.target = this.matter.add.gameObject(
-            this.add.rectangle(xT + this.tileOffset.x, yT + this.tileOffset.y, width, height, 0x0000ff),
-            {
-              isStatic: true,
-              isSensor: true
-            }
-          ) as Phaser.Physics.Matter.Sprite;
-        }
+    graphics.lineBetween(tileA.pixelX, tileA.pixelY, tileB.pixelX, tileB.pixelY);
+    graphics.lineBetween(tileB.pixelX, tileB.pixelY, tileC.pixelX, tileC.pixelY);
+    graphics.lineBetween(tileC.pixelX, tileC.pixelY, tileD.pixelX, tileD.pixelY);
+    graphics.lineBetween(tileD.pixelX, tileD.pixelY, tileA.pixelX, tileA.pixelY);
+  }
+
+  buildPathfindingMap(tileLayer: Phaser.Tilemaps.TilemapLayer) {
+    console.log('Building map');
+    let grid: number[][] = [];
+    let acceptableTiles: number[] = [];
+
+    for (let r = 0; r < tileLayer.layer.data.length; r++) {
+      const row = tileLayer.layer.data[r];
+      const currentRow: number[] = [];
+      for (let c = 0; c < row.length; c++) {
+        const col = row[c];
+        currentRow.push(col.index);
+        if (col.properties.type === 'road') acceptableTiles.push(col.index);
       }
-    });
-    this.car.setupCollision(this.target);
-    //Playing
-    const circle = this.add.circle(400, 400, 30, 0x00ff00);
-    this.followCircle = this.matter.add.gameObject(circle) as Phaser.Physics.Matter.Sprite; // Trick it
-    this.fpsText = new FpsText(this);
+      grid.push(currentRow);
+    }
 
-    // this.cameras.main.setSize(1920, 1080);
-    this.cameras.main.zoom = 0.5;
-    this.cameras.main.x -= 300;
-    this.cameras.main.y -= 200;
+    this.finder.setGrid(grid);
+    this.finder.setAcceptableTiles(acceptableTiles);
+  }
 
-    this.input.on('gameobjectdown', (pointer: any, gameObject: any) => {
-      console.log('clicked!', pointer, gameObject);
-    });
-    this.input.on('pointerdown', (pointer: MatterJS.BodyType) => {
-      console.log('pointer down', pointer);
-      console.log('x, y', pointer.position);
-      console.log('world x,y', (pointer as any).worldX, (pointer as any).worldY);
-    });
-    this.matter.world.on('collisionstart', (event, bodyA: MatterJS.BodyType, bodyB: MatterJS.BodyType) => {
-      console.log('inside collision', event, bodyA, bodyB);
-    });
+  handleClick(pointer: Phaser.Input.Pointer) {
+    this.map.setLayer('middle');
+
+    const clickedTile = this.map.getTileAtWorldXY(
+      pointer.worldX - tileOffset.x + this.map.tileWidth / 2,
+      pointer.worldY - tileOffset.y + this.map.tileHeight / 2
+    );
+    let toX = clickedTile.x;
+    let toY = clickedTile.y;
+    const toTile = this.map.getTileAt(toX, toY, false, 'middle');
+    toTile?.setAlpha(0.5);
+
+    this.car.goToTarget(new Vector2(pointer.worldX, pointer.worldY));
   }
 
   update() {
     this.fpsText.update();
-    const { velX: xDirSpeed, velY: yDirSpeed } = velocityToTarget(
-      this.car.sprite.body.position,
-      this.target.body.position,
-      2,
-      1
-    );
-    this.car.update(xDirSpeed, yDirSpeed);
+    this.car.update();
+    // const { velX: xDirSpeed, velY: yDirSpeed } = velocityToTarget(this.car.sprite.body.position, this.target, 2, 1);
+    // this.car.update(xDirSpeed, yDirSpeed);
   }
   twoDToIso(pt: Phaser.Math.Vector2): Phaser.Math.Vector2 {
     var tempPt: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0);
@@ -168,25 +213,4 @@ export default class MainScene extends Phaser.Scene {
     tempPt.y = (pt.x + pt.y) / 2;
     return tempPt;
   }
-}
-
-const velocityToTarget = (
-  from: Phaser.Math.Vector2 | MatterJS.Vector,
-  to: Phaser.Math.Vector2 | MatterJS.Vector,
-  speed = 1,
-  followLength = 160
-): VelocityToTarget => {
-  const distanceX = Phaser.Math.Difference(from.x, to.x) > followLength;
-  const distanceY = Phaser.Math.Difference(from.y, to.y) > followLength;
-  const direction = Math.atan((to.x - from.x) / (to.y - from.y));
-  const speed2 = to.y >= from.y ? speed : -speed;
-
-  return {
-    velX: distanceX ? speed2 * Math.sin(direction) : 0,
-    velY: distanceY ? speed2 * Math.cos(direction) : 0
-  };
-};
-interface VelocityToTarget {
-  velX: number;
-  velY: number;
 }
