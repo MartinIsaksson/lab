@@ -27,7 +27,7 @@ export class Car {
   }
   private init(x: number, y: number) {
     this.sprite = this.scene.matter.add.sprite(x, y, 'car', 'sedan_W.png', {
-      render: { sprite: { yOffset: 0.07, xOffset: 0.00 } }
+      render: { sprite: { yOffset: 0.07, xOffset: 0.0 } }
     });
     this.sprite.setBody({
       type: 'fromVerts',
@@ -35,7 +35,6 @@ export class Car {
       verts:
         'M 26 111 L 28 85 L 46 69 L 50 68 L 64 66 L 78 59 L 111 59 L 135 69 L 148 111 L 121 111 L 121 97 L 108 97 L 107 111 L 62 111 L 62 97 L 51 97 L 49 111'
     });
-    // this.sprite.setScale(0.5);
     this.sprite.setFixedRotation();
     this.sprite.setOnCollide(this.collissionHandler);
     this.lastSetFrame = 'W';
@@ -91,9 +90,13 @@ export class Car {
     });
     this.pathFinder.calculate();
   }
-  setRotation(tileA: Vector2, tileB: Vector2) {
-    if (tileA.x === tileB.x && tileA.y === tileB.y) return;
-    const angle = (((Phaser.Math.Angle.BetweenPoints(tileA, tileB) * Phaser.Math.PI2 * 100) % 360) + 360) % 360;
+  setRotation(path: { x: number; y: number }[], step: number) {
+    const thisPath = path[step + 1];
+    const nextPath = path[step + 2] || thisPath;
+    const tile = this.roadsTilemap.tileToWorldXY(thisPath.x, thisPath.y);
+    const nextTile = this.roadsTilemap.tileToWorldXY(nextPath.x, nextPath.y);
+    if (tile.x === nextTile.x && tile.y === nextTile.y) return;
+    const angle = (((Phaser.Math.Angle.BetweenPoints(tile, nextTile) * Phaser.Math.PI2 * 100) % 360) + 360) % 360;
     let dir = 'E';
     if (angle >= 0 && angle < 90) dir = 'NE';
     if (angle >= 90 && angle < 180) dir = 'NW';
@@ -106,17 +109,16 @@ export class Car {
   moveCar(path: { x: number; y: number }[]) {
     // Sets up a list of tweens, one for each tile to walk, that will be chained by the timeline
     let tweens: Tween[] = [];
+    this.setRotation(path, 0);
     for (let i = 0; i < path.length - 1; i++) {
-      let thisPath = path[i + 1];
-      let nextPath = path[i + 2] || thisPath;
+      const thisPath = path[i + 1];
       const tile = this.roadsTilemap.tileToWorldXY(thisPath.x, thisPath.y);
-      const nextTile = this.roadsTilemap.tileToWorldXY(nextPath.x, nextPath.y);
       const car = this;
       tweens.push({
         targets: this.sprite,
         onComplete: (tween) => {
           events.emit(GameEvents.BatteryDrain);
-          car.setRotation(tile, nextTile);
+          car.setRotation(path, i);
         },
         x: { value: tile.x + tileOffset.x, duration: 200 },
         y: { value: tile.y + tileOffset.y, duration: 200 }
