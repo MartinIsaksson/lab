@@ -1,11 +1,11 @@
-import { Vector2 } from './../infrastructure/types';
 import EasyStar, { js } from 'easystarjs';
 import Phaser from 'phaser';
+import { tileOffset } from '../infrastructure/constants';
 import { Car } from '../objects/Car';
 import FpsText from '../objects/fpsText';
 import { Tween } from '../infrastructure/interfaces';
 import { sharedInstance as events, GameEvents } from '../infrastructure/EventCenter';
-import { tileOffset } from '../infrastructure/constants';
+import { Vector2 } from './../infrastructure/types';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
 };
@@ -96,7 +96,7 @@ export default class MainScene extends Phaser.Scene {
       console.log('world x,y', pointer.worldX, pointer.worldY);
       this.handleClick(pointer);
     });
-    this.buildPathfindingMap(roads);
+    // this.buildPathfindingMap(roads);
   }
 
   private buildMap() {
@@ -186,62 +186,18 @@ export default class MainScene extends Phaser.Scene {
   }
 
   handleClick(pointer: Phaser.Input.Pointer) {
-    let x = this.cameras.main.scrollX + pointer.x;
-    let y = this.cameras.main.scrollY + pointer.y;
     this.map.setLayer('middle');
-    const currentCarTile = this.map.getTileAtWorldXY(
-      this.car.sprite.x - tileOffset.x + this.map.tileWidth / 2,
-      this.car.sprite.y - tileOffset.y + this.map.tileHeight / 2
-    );
-    const graphics = this.add.graphics();
-    // graphics.fillCircle(currentCarTile.pixelX + this.tileOffset.x, currentCarTile.pixelY + this.tileOffset.y, 100);
+
     const clickedTile = this.map.getTileAtWorldXY(
       pointer.worldX - tileOffset.x + this.map.tileWidth / 2,
       pointer.worldY - tileOffset.y + this.map.tileHeight / 2
     );
-    // graphics.fillCircle(clickedTile.pixelX + this.tileOffset.x, clickedTile.pixelY + this.tileOffset.y, 50);
     let toX = clickedTile.x;
     let toY = clickedTile.y;
-    // this.car.sprite.x = currentCarTile.pixelX + this.tileOffset.x;
-    // this.car.sprite.y = currentCarTile.pixelY + this.tileOffset.y;
-    console.log(x, y, toX, toY);
-    let fromX = currentCarTile.x;
-    let fromY = currentCarTile.y;
-    console.log('going from (' + fromX + ',' + fromY + ') to (' + toX + ',' + toY + ')');
-    const scene = this;
-    this.map.getTileAt(toX, toY, false, 'middle')?.setAlpha(0.5);
-    this.map.getTileAt(fromX, fromY, false, 'middle')?.setAlpha(0.5);
-    this.finder.findPath(fromX, fromY, toX, toY, (path) => {
-      if (path === null) {
-        console.warn('Path was not found.');
-      } else {
-        console.log(path);
-        scene.moveCharacter(path);
-      }
-    });
-    this.finder.calculate();
-  }
+    const toTile = this.map.getTileAt(toX, toY, false, 'middle');
+    toTile?.setAlpha(0.5);
 
-  moveCharacter(path: { x: number; y: number }[]) {
-    // Sets up a list of tweens, one for each tile to walk, that will be chained by the timeline
-    let tweens: Tween[] = [];
-    for (let i = 0; i < path.length - 1; i++) {
-      let ex = path[i + 1].x;
-      let ey = path[i + 1].y;
-      const tile = this.map.tileToWorldXY(ex, ey);
-      tweens.push({
-        targets: this.car.sprite,
-        onComplete: (tween) => {
-          events.emit(GameEvents.BatteryDrain);
-        },
-        x: { value: tile.x + tileOffset.x, duration: 200 },
-        y: { value: tile.y + tileOffset.y, duration: 200 }
-      });
-    }
-
-    this.tweens.timeline({
-      tweens: tweens
-    });
+    this.car.goToTarget(new Vector2(pointer.worldX, pointer.worldY));
   }
 
   update() {
