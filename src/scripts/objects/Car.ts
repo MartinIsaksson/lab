@@ -26,7 +26,9 @@ export class Car {
     this.gfx = this.scene.add.graphics();
   }
   private init(x: number, y: number) {
-    this.sprite = this.scene.matter.add.sprite(x, y, 'car', 'sedan_W.png');
+    this.sprite = this.scene.matter.add.sprite(x, y, 'car', 'sedan_W.png', {
+      render: { sprite: { yOffset: 0.07, xOffset: 0.00 } }
+    });
     this.sprite.setBody({
       type: 'fromVerts',
       y: -10,
@@ -72,19 +74,19 @@ export class Car {
     const car = this;
     // this.pathFinder.buildPathfindingMap(this.roadsTilemap);
     this.pathFinder.findPath(tile.x, tile.y, targetTile.x, targetTile.y, (path) => {
-      path.forEach((tile, idx, self) => {
-        const tilePos = this.roadsTilemap.tileToWorldXY(tile.x, tile.y);
-        let nextTile = self[idx + 1];
-        if (!nextTile) nextTile = tile;
-        const nextTilePos = this.roadsTilemap.tileToWorldXY(nextTile.x, nextTile.y);
-        // this.gfx.lineStyle(3, 0xff0000, 1);
-        // this.gfx.lineBetween(
-        //   tilePos.x + tileOffset.x,
-        //   tilePos.y + tileOffset.y,
-        //   nextTilePos.x + tileOffset.x,
-        //   nextTilePos.y + tileOffset.y
-        // );
-      });
+      // path.forEach((tile, idx, self) => {
+      //   const tilePos = this.roadsTilemap.tileToWorldXY(tile.x, tile.y);
+      //   let nextTile = self[idx + 1];
+      //   if (!nextTile) nextTile = tile;
+      //   const nextTilePos = this.roadsTilemap.tileToWorldXY(nextTile.x, nextTile.y);
+      //   this.gfx.lineStyle(3, 0xff0000, 1);
+      //   this.gfx.lineBetween(
+      //     tilePos.x + tileOffset.x,
+      //     tilePos.y + tileOffset.y,
+      //     nextTilePos.x + tileOffset.x,
+      //     nextTilePos.y + tileOffset.y
+      //   );
+      // });
       car.moveCar(path);
     });
     this.pathFinder.calculate();

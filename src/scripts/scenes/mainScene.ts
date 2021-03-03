@@ -3,8 +3,6 @@ import Phaser from 'phaser';
 import { tileOffset } from '../infrastructure/constants';
 import { Car } from '../objects/Car';
 import FpsText from '../objects/fpsText';
-import { Tween } from '../infrastructure/interfaces';
-import { sharedInstance as events, GameEvents } from '../infrastructure/EventCenter';
 import { Vector2 } from './../infrastructure/types';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
@@ -186,6 +184,7 @@ export default class MainScene extends Phaser.Scene {
   }
 
   handleClick(pointer: Phaser.Input.Pointer) {
+    this.car.stop();
     this.map.setLayer('middle');
 
     const clickedTile = this.map.getTileAtWorldXY(
