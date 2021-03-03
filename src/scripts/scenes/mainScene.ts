@@ -1,16 +1,13 @@
+import { Vector2 } from './../infrastructure/types';
 import EasyStar, { js } from 'easystarjs';
 import Phaser from 'phaser';
 import { Car } from '../objects/Car';
 import FpsText from '../objects/fpsText';
+import { Tween } from '../infrastructure/interfaces';
+import { tileOffset } from '../infrastructure/constants';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
 };
-
-interface Tween {
-  targets: Phaser.Physics.Matter.Sprite;
-  x: { value: number; duration: number };
-  y: { value: number; duration: number };
-}
 
 export default class MainScene extends Phaser.Scene {
   fpsText: Phaser.GameObjects.Text;
@@ -20,7 +17,7 @@ export default class MainScene extends Phaser.Scene {
   target: Phaser.Math.Vector2;
   map: Phaser.Tilemaps.Tilemap;
   finder: js;
-  private readonly tileOffset = { x: 256, y: 310 };
+
   constructor() {
     super({ key: 'MainScene' });
   }
@@ -62,26 +59,24 @@ export default class MainScene extends Phaser.Scene {
     const objectsLayer = this.map.getObjectLayer('objects');
     objectsLayer.objects.forEach((objData) => {
       const { x = 0, y = 0, name, width = 0, height = 0 } = objData;
-      const thatMap = this.map;
-
       switch (name) {
         case 'car_spawn': {
-          console.log(this.twoDToIso(new Phaser.Math.Vector2(192, 166)));
-          const { x: xT, y: yT } = this.twoDToIso(new Phaser.Math.Vector2(x, y));
-          this.car = new Car(this, xT + this.tileOffset.x, yT + this.tileOffset.y);
+          console.log(this.twoDToIso(new Vector2(192, 166)));
+          const { x: xT, y: yT } = this.twoDToIso(new Vector2(x, y));
+          this.car = new Car(this, xT + tileOffset.x, yT + tileOffset.y, roads);
           // // this.cameras.main.startFollow(this.car.sprite, true);
           break;
         }
         case 'target': {
-          const { x: xT, y: yT } = this.twoDToIso(new Phaser.Math.Vector2(x, y));
+          const { x: xT, y: yT } = this.twoDToIso(new Vector2(x, y));
           const targetGameobject = this.matter.add.gameObject(
-            this.add.rectangle(xT + this.tileOffset.x, yT + this.tileOffset.y, width, height, 0x0000ff),
+            this.add.rectangle(xT + tileOffset.x, yT + tileOffset.y, width, height, 0x0000ff),
             {
               isStatic: true,
               isSensor: true
             }
           ) as Phaser.Physics.Matter.Sprite;
-          this.target = new Phaser.Math.Vector2(targetGameobject.x, targetGameobject.y);
+          this.target = new Vector2(targetGameobject.x, targetGameobject.y);
         }
       }
     });
@@ -139,8 +134,8 @@ export default class MainScene extends Phaser.Scene {
             });
           }
           (tile.physics as any).matterBody.body = this.matter.add.fromVertices(
-            tileWorldPos.x + this.tileOffset.x,
-            tileWorldPos.y + this.tileOffset.y,
+            tileWorldPos.x + tileOffset.x,
+            tileWorldPos.y + tileOffset.y,
             points,
             {
               isStatic: true,
@@ -194,14 +189,14 @@ export default class MainScene extends Phaser.Scene {
     let y = this.cameras.main.scrollY + pointer.y;
     this.map.setLayer('middle');
     const currentCarTile = this.map.getTileAtWorldXY(
-      this.car.sprite.x - this.tileOffset.x + this.map.tileWidth / 2,
-      this.car.sprite.y - this.tileOffset.y + this.map.tileHeight / 2
+      this.car.sprite.x - tileOffset.x + this.map.tileWidth / 2,
+      this.car.sprite.y - tileOffset.y + this.map.tileHeight / 2
     );
     const graphics = this.add.graphics();
     // graphics.fillCircle(currentCarTile.pixelX + this.tileOffset.x, currentCarTile.pixelY + this.tileOffset.y, 100);
     const clickedTile = this.map.getTileAtWorldXY(
-      pointer.worldX - this.tileOffset.x + this.map.tileWidth / 2,
-      pointer.worldY - this.tileOffset.y + this.map.tileHeight / 2
+      pointer.worldX - tileOffset.x + this.map.tileWidth / 2,
+      pointer.worldY - tileOffset.y + this.map.tileHeight / 2
     );
     // graphics.fillCircle(clickedTile.pixelX + this.tileOffset.x, clickedTile.pixelY + this.tileOffset.y, 50);
     let toX = clickedTile.x;
@@ -226,7 +221,7 @@ export default class MainScene extends Phaser.Scene {
     this.finder.calculate();
   }
 
-  moveCharacter(path) {
+  moveCharacter(path: { x: number; y: number }[]) {
     // Sets up a list of tweens, one for each tile to walk, that will be chained by the timeline
     let tweens: Tween[] = [];
     for (let i = 0; i < path.length - 1; i++) {
@@ -235,8 +230,8 @@ export default class MainScene extends Phaser.Scene {
       const tile = this.map.tileToWorldXY(ex, ey);
       tweens.push({
         targets: this.car.sprite,
-        x: { value: tile.x + this.tileOffset.x, duration: 200 },
-        y: { value: tile.y + this.tileOffset.y, duration: 200 }
+        x: { value: tile.x + tileOffset.x, duration: 200 },
+        y: { value: tile.y + tileOffset.y, duration: 200 }
       });
     }
 

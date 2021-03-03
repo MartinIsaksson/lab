@@ -1,1 +1,1 @@
-export type Vector2 = Phaser.Math.Vector2;
+export class Vector2 extends Phaser.Math.Vector2 {}
