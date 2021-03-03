@@ -90,6 +90,7 @@ export class Car {
     this.pathFinder.calculate();
   }
   setRotation(tileA: Vector2, tileB: Vector2) {
+    if (tileA.x === tileB.x && tileA.y === tileB.y) return;
     const angle = (((Phaser.Math.Angle.BetweenPoints(tileA, tileB) * Phaser.Math.PI2 * 100) % 360) + 360) % 360;
     let dir = 'E';
     if (angle >= 0 && angle < 90) dir = 'NE';
