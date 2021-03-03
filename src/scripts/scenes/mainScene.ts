@@ -42,7 +42,6 @@ export default class MainScene extends Phaser.Scene {
   create() {
     this.scene.launch('BatteryScene');
     this.scene.launch('HighScore');
-    // this.add.tilemap('roadsMap');
     this.map = this.make.tilemap({ key: 'roadsMap' });
     this.finder = new EasyStar.js();
 
