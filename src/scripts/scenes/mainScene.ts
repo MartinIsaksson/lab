@@ -77,7 +77,6 @@ export default class MainScene extends Phaser.Scene {
           ) as Phaser.Physics.Matter.Sprite;
           this.target = new Vector2(targetGameobject.x, targetGameobject.y);
         }
-        case
       }
     });
     if (this.target && this.car) {
