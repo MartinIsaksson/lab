@@ -4,6 +4,7 @@ import Phaser from 'phaser';
 import { Car } from '../objects/Car';
 import FpsText from '../objects/fpsText';
 import { Tween } from '../infrastructure/interfaces';
+import { sharedInstance as events, GameEvents } from '../infrastructure/EventCenter';
 import { tileOffset } from '../infrastructure/constants';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
@@ -230,6 +231,9 @@ export default class MainScene extends Phaser.Scene {
       const tile = this.map.tileToWorldXY(ex, ey);
       tweens.push({
         targets: this.car.sprite,
+        onComplete: (tween) => {
+          events.emit(GameEvents.BatteryDrain);
+        },
         x: { value: tile.x + tileOffset.x, duration: 200 },
         y: { value: tile.y + tileOffset.y, duration: 200 }
       });
@@ -242,6 +246,7 @@ export default class MainScene extends Phaser.Scene {
 
   update() {
     this.fpsText.update();
+    this.car.update();
     // const { velX: xDirSpeed, velY: yDirSpeed } = velocityToTarget(this.car.sprite.body.position, this.target, 2, 1);
     // this.car.update(xDirSpeed, yDirSpeed);
   }

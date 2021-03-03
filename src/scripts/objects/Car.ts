@@ -35,6 +35,7 @@ export class Car {
     this.sprite.setFixedRotation();
     this.sprite.setOnCollide(this.collissionHandler);
     this.lastSetFrame = 'W';
+    events.on(GameEvents.BatteryEmpty, this.stop, this);
   }
   public setupCollision(target: Phaser.Physics.Matter.Sprite) {
     this.sprite.setOnCollideWith(target.body, (data: MatterJS.ICollisionPair) => {
@@ -49,7 +50,7 @@ export class Car {
     //Do something else
     this.sprite.setPosition(this.initialX, this.initialY);
     this.sprite.setStatic(true);
-    events.emit(GameEvents.CarOutsideOfBounds);
+    // events.emit(GameEvents.CarOutsideOfBounds);
   }
   goToTarget(target: Vector2) {
     const tile = this.roadsTilemap.getTileAtWorldXY(
@@ -83,6 +84,9 @@ export class Car {
       const tile = this.roadsTilemap.tileToWorldXY(ex, ey);
       tweens.push({
         targets: this.sprite,
+        onComplete: (tween) => {
+          events.emit(GameEvents.BatteryDrain);
+        },
         x: { value: tile.x + tileOffset.x, duration: 200 },
         y: { value: tile.y + tileOffset.y, duration: 200 }
       });
@@ -90,7 +94,7 @@ export class Car {
     this.scene.tweens.timeline({ tweens: tweens });
   }
 
-  update(xVel: number, yVel: number) {
+  update() {
     // this.sprite.setVelocity(xVel, yVel);
   }
 }
