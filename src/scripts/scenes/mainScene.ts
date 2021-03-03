@@ -4,7 +4,6 @@ import { tileOffset } from '../infrastructure/constants';
 import { Car } from '../objects/Car';
 import FpsText from '../objects/fpsText';
 import { Tween } from '../infrastructure/interfaces';
-import { sharedInstance as events, GameEvents } from '../infrastructure/EventCenter';
 import { Vector2 } from './../infrastructure/types';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
@@ -42,6 +41,7 @@ export default class MainScene extends Phaser.Scene {
 
   create() {
     this.scene.launch('BatteryScene');
+    this.scene.launch('HighScore');
     this.map = this.make.tilemap({ key: 'roadsMap' });
     this.finder = new EasyStar.js();
 
