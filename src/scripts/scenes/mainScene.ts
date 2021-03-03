@@ -3,6 +3,8 @@ import Phaser from 'phaser';
 import { tileOffset } from '../infrastructure/constants';
 import { Car } from '../objects/Car';
 import FpsText from '../objects/fpsText';
+import { Tween } from '../infrastructure/interfaces';
+import { sharedInstance as events, GameEvents } from '../infrastructure/EventCenter';
 import { Vector2 } from './../infrastructure/types';
 export type MyMatterBodyConfig = Phaser.Types.Physics.Matter.MatterBodyConfig & {
   shape?: any;
@@ -200,6 +202,7 @@ export default class MainScene extends Phaser.Scene {
 
   update() {
     this.fpsText.update();
+    this.car.update();
     // const { velX: xDirSpeed, velY: yDirSpeed } = velocityToTarget(this.car.sprite.body.position, this.target, 2, 1);
     // this.car.update(xDirSpeed, yDirSpeed);
   }
