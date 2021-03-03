@@ -40,86 +40,19 @@ export default class MainScene extends Phaser.Scene {
     this.load.atlas('car', 'sedan-sheet.png', 'sedan-sheet.json');
     // this.load.atlas("car", "sport-car.png", "sport-car.json");
   }
+
   create() {
     // this.add.tilemap('roadsMap');
 
     this.map = this.make.tilemap({ key: 'roadsMap' });
     this.finder = new EasyStar.js();
     // this.scale.setGameSize(this.map.widthInPixels, this.map.heightInPixels);
-    this.matter.world.createDebugGraphic();
-    this.matter.world.drawDebug = true;
+
     const { width, height, autoCenter } = this.scale;
     console.log('scale', this.scale);
 
-    const naturePaths = this.map.addTilesetImage('nature-path-sheet', 'paths');
-    const roadsTileset = this.map.addTilesetImage('roads', 'roads-sheet');
-    const treesTileset = this.map.addTilesetImage('trees', 'trees');
-    const mountaintileSet = this.map.addTilesetImage('mountain', 'mountain');
-    const bottom = this.map.createLayer('bottom', naturePaths);
-    const roads = this.map.createLayer('middle', [naturePaths, roadsTileset]);
-    const trees = this.map.createLayer('trees', treesTileset);
-    const mountain = this.map.createLayer('mountain_bottom', mountaintileSet);
-    bottom.setCollisionByProperty({ collides: true }); // just when we add the car.
-    this.matter.world.convertTilemapLayer(bottom);
-    const graphics = this.add.graphics();
-    const tileA = roads.getTileAt(0, 0);
-    const tileB = roads.getTileAt(31, 0);
-    const tileC = roads.getTileAt(31, 31);
-    const tileD = roads.getTileAt(0, 31);
-
-    graphics.lineBetween(tileA.pixelX, tileA.pixelY, tileB.pixelX, tileB.pixelY);
-    graphics.lineBetween(tileB.pixelX, tileB.pixelY, tileC.pixelX, tileC.pixelY);
-    graphics.lineBetween(tileC.pixelX, tileC.pixelY, tileD.pixelX, tileD.pixelY);
-    graphics.lineBetween(tileD.pixelX, tileD.pixelY, tileA.pixelX, tileA.pixelY);
-    bottom.forEachTile((tile) => {
-      const tileWorldPos = bottom.tileToWorldXY(tile.x, tile.y); //this is the tile as 1,0
-      const collisionGroup: any = naturePaths.getTileCollisionGroup(tile.index);
-      if (!collisionGroup || collisionGroup.objects.length === 0) {
-        return;
-      }
-      const objects = collisionGroup.objects;
-      (tile.physics as any).matterBody.body.isSensor = true;
-      (tile.physics as any).matterBody.body.label = 'dangerousTile';
-      for (var i = 0; i < objects.length; i++) {
-        var object = objects[i];
-        var objectX = tileWorldPos.x + object.x;
-        var objectY = tileWorldPos.y + object.y;
-
-        // When objects are parsed by Phaser, they will be guaranteed to have one of the
-        // following properties if they are a rectangle/ellipse/polygon/polyline.
-        if (object.rectangle) {
-          graphics.strokeRect(objectX, objectY, object.width, object.height);
-        } else if (object.ellipse) {
-          // Ellipses in Tiled have a top-left origin, while ellipses in Phaser have a center
-          // origin
-          graphics.strokeEllipse(objectX + object.width / 2, objectY + object.height / 2, object.width, object.height);
-        } else if (object.polygon || object.polyline) {
-          var originalPoints = object.polygon ? object.polygon : object.polyline;
-          var points: any[] = [];
-          for (var j = 0; j < originalPoints.length; j++) {
-            var point: any = originalPoints[j];
-            points.push({
-              x: objectX + point.x,
-              y: objectY + point.y
-            });
-          }
-          (tile.physics as any).matterBody.body = this.matter.add.fromVertices(
-            tileWorldPos.x + this.tileOffset.x,
-            tileWorldPos.y + this.tileOffset.y,
-            points,
-            {
-              isStatic: true,
-              isSensor: true,
-              label: 'offroad'
-            }
-          );
-          // const collisionBody = (tile.physics as any).matterBody.body as MatterJS.BodyType;
-          // collisionBody.position = new Phaser.Math.Vector2(tileWorldPos.x + 250, tileWorldPos.y + 310);
-          // this.matter.world.add(collisionBody);
-          // this.collisionTiles.push((tile.physics as any).matterBody as Phaser.Physics.Matter.TileBody);
-        }
-      }
-    });
+    const roads = this.buildMap();
+    this.enableDebug(roads);
 
     this.input.on('wheel', (pointer, gameObjects, deltaX, deltaY, deltaZ) => {
       if (deltaY < 0) {
@@ -179,32 +112,78 @@ export default class MainScene extends Phaser.Scene {
     //     // this.car.stop()
     //   }
     // });
-    this.buildMap(roads);
+    this.buildPathfindingMap(roads);
     // this.findAcceptableTiles(roadsTileset);
   }
 
-  buildMap(tileLayer: Phaser.Tilemaps.TilemapLayer) {
+  private buildMap() {
+    const naturePaths = this.map.addTilesetImage('nature-path-sheet', 'paths');
+    const roadsTileset = this.map.addTilesetImage('roads', 'roads-sheet');
+    const treesTileset = this.map.addTilesetImage('trees', 'trees');
+    const mountaintileSet = this.map.addTilesetImage('mountain', 'mountain');
+    const bottom = this.map.createLayer('bottom', naturePaths);
+    const roads = this.map.createLayer('middle', [naturePaths, roadsTileset]);
+    const trees = this.map.createLayer('trees', treesTileset);
+    const mountain = this.map.createLayer('mountain_bottom', mountaintileSet);
+    bottom.setCollisionByProperty({ collides: true }); // just when we add the car.
+    this.matter.world.convertTilemapLayer(bottom);
+
+    bottom.forEachTile((tile) => {
+      const tileWorldPos = bottom.tileToWorldXY(tile.x, tile.y); //this is the tile as 1,0
+      const collisionGroup: any = naturePaths.getTileCollisionGroup(tile.index);
+      if (!collisionGroup || collisionGroup.objects.length === 0) {
+        return;
+      }
+      const objects = collisionGroup.objects;
+      (tile.physics as any).matterBody.body.isSensor = true;
+      (tile.physics as any).matterBody.body.label = 'dangerousTile';
+      for (var i = 0; i < objects.length; i++) {
+        var object = objects[i];
+        var objectX = tileWorldPos.x + object.x;
+        var objectY = tileWorldPos.y + object.y;
+        if (object.polygon || object.polyline) {
+          var originalPoints = object.polygon ? object.polygon : object.polyline;
+          var points: any[] = [];
+          for (var j = 0; j < originalPoints.length; j++) {
+            var point: any = originalPoints[j];
+            points.push({
+              x: objectX + point.x,
+              y: objectY + point.y
+            });
+          }
+          (tile.physics as any).matterBody.body = this.matter.add.fromVertices(
+            tileWorldPos.x + this.tileOffset.x,
+            tileWorldPos.y + this.tileOffset.y,
+            points,
+            {
+              isStatic: true,
+              isSensor: true,
+              label: 'offroad'
+            }
+          );
+        }
+      }
+    });
+    return roads;
+  }
+
+  private enableDebug(roads: Phaser.Tilemaps.TilemapLayer) {
+    this.matter.world.createDebugGraphic();
+    this.matter.world.drawDebug = true;
+    const graphics = this.add.graphics();
+    const tileA = roads.getTileAt(0, 0);
+    const tileB = roads.getTileAt(31, 0);
+    const tileC = roads.getTileAt(31, 31);
+    const tileD = roads.getTileAt(0, 31);
+
+    graphics.lineBetween(tileA.pixelX, tileA.pixelY, tileB.pixelX, tileB.pixelY);
+    graphics.lineBetween(tileB.pixelX, tileB.pixelY, tileC.pixelX, tileC.pixelY);
+    graphics.lineBetween(tileC.pixelX, tileC.pixelY, tileD.pixelX, tileD.pixelY);
+    graphics.lineBetween(tileD.pixelX, tileD.pixelY, tileA.pixelX, tileA.pixelY);
+  }
+
+  buildPathfindingMap(tileLayer: Phaser.Tilemaps.TilemapLayer) {
     console.log('Building map');
-
-    // let grid: number[][] = [];
-    // for (let y = 0; y < this.map.height; y++) {
-    //   let col: number[] = [];
-    //   for (let x = 0; x < this.map.width; x++) {
-    //     // In each cell we store the ID of the tile, which corresponds
-    //     // to its index in the tileset of the map ("ID" field in Tiled)
-    //     // console.log(x, y);
-    //     this.map.layers.forEach((layer) => {
-    //       const tile = this.map.getTileAt(x, y, false, layer.name);
-
-    //       // console.log(tile);
-    //       const tileId = tile?.index;
-    //       console.log(tileId);
-    //       if (tileId > -1) col.push(tileId);
-    //     });
-    //   }
-    //   grid.push(col);
-    // }
-
     let grid: number[][] = [];
     let acceptableTiles: number[] = [];
 
